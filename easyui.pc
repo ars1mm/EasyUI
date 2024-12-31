@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: EasyUI
+Description: A lightweight and easy-to-use GUI library for C
+Version: 0.1.0
+Requires:
+Libs: -L${libdir} -leasyui -lgdi32 -luser32
+Cflags: -I${includedir}
