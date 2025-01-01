@@ -12,12 +12,14 @@ cd EasyUI
 # Make scripts executable
 chmod +x scripts/*.sh
 
-# Install dependencies
+# Install dependencies (run this first!)
 ./scripts/install_dependencies.sh
 
-# Build and install
+# Build and install (run this after installing dependencies)
 ./scripts/build_and_install.sh
 ```
+
+Note: You can run the scripts from any directory. They will automatically find the correct project directory.
 
 ## Custom Installation
 
@@ -48,6 +50,7 @@ If you prefer to install manually:
 
 2. Build and install:
    ```bash
+   # Make sure you're in the EasyUI root directory
    mkdir build
    cd build
    cmake ..
@@ -89,7 +92,12 @@ gcc -o myapp myapp.c -leasyui
    pkg-config --cflags easyui
    ```
 
-3. For other issues, please check:
+3. Common Issues:
+   - "CMakeLists.txt not found": Make sure you're running the build script from the EasyUI directory
+   - "Permission denied": Run the install script with sudo or as root
+   - "X11 not found": Install X11 development packages for your distribution
+
+4. For other issues, please check:
    - The installation log
    - System requirements
    - Compiler version (GCC 4.8 or later recommended)
@@ -100,4 +108,3 @@ To uninstall EasyUI:
 ```bash
 cd build
 sudo make uninstall
-```

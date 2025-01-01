@@ -3,6 +3,10 @@
 # Default installation prefix
 PREFIX="/usr/local"
 
+# Get the absolute path to the project root directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -31,6 +35,9 @@ handle_error() {
     exit 1
 }
 
+# Change to project root directory
+cd "$PROJECT_ROOT" || handle_error "Failed to change to project root directory"
+
 # Create build directory
 echo "Creating build directory..."
 mkdir -p build || handle_error "Failed to create build directory"
@@ -38,7 +45,7 @@ cd build || handle_error "Failed to enter build directory"
 
 # Configure with CMake
 echo "Configuring with CMake..."
-cmake .. \
+cmake "$PROJECT_ROOT" \
     -DCMAKE_INSTALL_PREFIX="$PREFIX" \
     -DCMAKE_BUILD_TYPE=Release || handle_error "CMake configuration failed"
 
