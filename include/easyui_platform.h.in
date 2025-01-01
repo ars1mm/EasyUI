@@ -1,54 +1,79 @@
 #ifndef EASYUI_PLATFORM_H
 #define EASYUI_PLATFORM_H
 
-/* Forward declarations */
-struct EUI_Window;
-struct EUI_LineStyle;
-struct EUI_ShapeStyle;
-struct EUI_TextStyle;
-
-/* Platform detection */
 #cmakedefine EASYUI_PLATFORM_WINDOWS
 #cmakedefine EASYUI_PLATFORM_LINUX
 #cmakedefine EASYUI_PLATFORM_MACOS
 
-/* Platform-specific includes */
+// Platform-specific includes and types
 #ifdef EASYUI_PLATFORM_WINDOWS
-    #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
-    #define NOGDI
-    #define NOMINMAX
-    typedef HWND EUI_NativeWindow;
-    typedef HDC EUI_NativeContext;
-    #define EUI_RGB(r,g,b) RGB(r,g,b)
+    typedef HWND EUI_WindowHandle;
 #elif defined(EASYUI_PLATFORM_LINUX)
     #include <X11/Xlib.h>
-    #include <X11/Xutil.h>
-    #include <X11/Xatom.h>
-    typedef Window EUI_NativeWindow;
-    typedef GC EUI_NativeContext;
-    #define EUI_RGB(r,g,b) ((r << 16) | (g << 8) | b)
+    typedef Window EUI_WindowHandle;
 #elif defined(EASYUI_PLATFORM_MACOS)
     #ifdef __OBJC__
         #import <Cocoa/Cocoa.h>
-        typedef NSWindow* EUI_NativeWindow;
-        typedef NSGraphicsContext* EUI_NativeContext;
+        typedef NSWindow* EUI_WindowHandle;
     #else
-        typedef void* EUI_NativeWindow;
-        typedef void* EUI_NativeContext;
+        typedef void* EUI_WindowHandle;
     #endif
-    #define EUI_RGB(r,g,b) ((r << 16) | (g << 8) | b)
-#else
-    #error "Unsupported platform"
 #endif
 
-/* Platform-specific function declarations */
+// Forward declarations of style structures
+struct EUI_ShapeStyle;
+struct EUI_TextStyle;
+
+// Common structures
+typedef struct EUI_Point {
+    int x;
+    int y;
+} EUI_Point;
+
+typedef struct EUI_Size {
+    int width;
+    int height;
+} EUI_Size;
+
+typedef struct EUI_Rect {
+    int x;
+    int y;
+    int width;
+    int height;
+} EUI_Rect;
+
+typedef struct EUI_LineStyle {
+    unsigned long color;
+    int width;
+    int style;  // Solid, dashed, etc.
+} EUI_LineStyle;
+
+struct EUI_Window {
+    EUI_WindowHandle handle;
+    struct EUI_Rect rect;
+    const char* title;
+};
+
+// Platform-specific function declarations
 #ifdef EASYUI_PLATFORM_WINDOWS
     struct EUI_Window* EUI_CreateWindowWin32(const char* title, int x, int y, int width, int height);
     void EUI_ShowWindowWin32(struct EUI_Window* window);
-    void EUI_ProcessMessagesWin32(void);
-    void EUI_DrawRectangleExWin32(struct EUI_Window* window, int x, int y, int width, int height, const struct EUI_ShapeStyle* style);
-    void EUI_DrawTextExWin32(struct EUI_Window* window, const char* text, int x, int y, const struct EUI_TextStyle* style);
+    void EUI_DestroyWindowWin32(struct EUI_Window* window);
+#elif defined(EASYUI_PLATFORM_LINUX)
+    struct EUI_Window* EUI_CreateWindowX11(const char* title, int x, int y, int width, int height);
+    void EUI_ShowWindowX11(struct EUI_Window* window);
+    void EUI_DestroyWindowX11(struct EUI_Window* window);
+    void EUI_DrawRectangleX11(struct EUI_Window* window, int x, int y, int width, int height, const struct EUI_ShapeStyle* style);
+    void EUI_DrawTextX11(struct EUI_Window* window, const char* text, int x, int y, const struct EUI_TextStyle* style);
+    void EUI_DrawPolygonX11(struct EUI_Window* window, const EUI_Point* points, int numPoints, const struct EUI_ShapeStyle* style);
+#elif defined(EASYUI_PLATFORM_MACOS)
+    struct EUI_Window* EUI_CreateWindowCocoa(const char* title, int x, int y, int width, int height);
+    void EUI_ShowWindowCocoa(struct EUI_Window* window);
+    void EUI_DestroyWindowCocoa(struct EUI_Window* window);
+    void EUI_DrawRectangleCocoa(struct EUI_Window* window, int x, int y, int width, int height, const struct EUI_ShapeStyle* style);
+    void EUI_DrawTextCocoa(struct EUI_Window* window, const char* text, int x, int y, const struct EUI_TextStyle* style);
+    void EUI_DrawPolygonCocoa(struct EUI_Window* window, const EUI_Point* points, int numPoints, const struct EUI_ShapeStyle* style);
 #endif
 
-#endif /* EASYUI_PLATFORM_H */
+#endif // EASYUI_PLATFORM_H
