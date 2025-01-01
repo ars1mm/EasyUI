@@ -21,25 +21,33 @@
     #endif
 #endif
 
-// Forward declarations
-struct EUI_Window;
+// Forward declarations of style structures
 struct EUI_ShapeStyle;
 struct EUI_TextStyle;
 
 // Common structures
-struct EUI_Point {
+typedef struct EUI_Point {
     int x;
     int y;
-};
-typedef struct EUI_Point EUI_Point;
+} EUI_Point;
 
-struct EUI_Rect {
+typedef struct EUI_Size {
+    int width;
+    int height;
+} EUI_Size;
+
+typedef struct EUI_Rect {
     int x;
     int y;
     int width;
     int height;
-};
-typedef struct EUI_Rect EUI_Rect;
+} EUI_Rect;
+
+typedef struct EUI_LineStyle {
+    unsigned long color;
+    int width;
+    int style;  // Solid, dashed, etc.
+} EUI_LineStyle;
 
 struct EUI_Window {
     EUI_WindowHandle handle;

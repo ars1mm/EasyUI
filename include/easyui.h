@@ -4,37 +4,11 @@
 #include "easyui_platform.h"
 #include <stdlib.h>
 
-// Point structure
-typedef struct EUI_Point {
-    int x;
-    int y;
-} EUI_Point;
-
-// Size structure
-typedef struct EUI_Size {
-    int width;
-    int height;
-} EUI_Size;
-
-// Rect structure
-typedef struct EUI_Rect {
-    int x;
-    int y;
-    int width;
-    int height;
-} EUI_Rect;
-
 // Style structures
-typedef struct EUI_LineStyle {
-    unsigned long color;
-    int width;
-    int style;  // Solid, dashed, etc.
-} EUI_LineStyle;
-
 typedef struct EUI_ShapeStyle {
     unsigned long fillColor;
-    unsigned long strokeColor;  // Changed from borderColor
-    int strokeWidth;           // Changed from borderWidth
+    unsigned long strokeColor;
+    int strokeWidth;
 } EUI_ShapeStyle;
 
 typedef struct EUI_TextStyle {
