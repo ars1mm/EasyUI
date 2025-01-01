@@ -1,83 +1,122 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Default installation directory
-set INSTALL_DIR=C:\Program Files\EasyUI
-
-:: Parse command line arguments
-if not "%1"=="" (
-    set INSTALL_DIR=%1
-)
-
-echo Installing EasyUI to %INSTALL_DIR%...
+echo EasyUI Windows Installation Script
+echo ================================
 echo.
 
-:: Check for administrator privileges
+:: Check if running with admin privileges
 net session >nul 2>&1
 if %errorlevel% neq 0 (
     echo Error: This script requires administrator privileges.
-    echo Please run this script as administrator.
+    echo Please right-click and select "Run as administrator"
+    pause
     exit /b 1
 )
 
-:: Build the library first
-call scripts\build_windows_libs.bat
+:: Detect available compilers
+set FOUND_COMPILER=0
+
+where cl >nul 2>&1
+if %errorlevel% equ 0 (
+    set FOUND_COMPILER=1
+    echo Found: Microsoft Visual Studio
+    set "MSVC_DETECTED=1"
+) else (
+    set "MSVC_DETECTED=0"
+)
+
+where gcc >nul 2>&1
+if %errorlevel% equ 0 (
+    set FOUND_COMPILER=1
+    echo Found: MinGW GCC
+    set "MINGW_DETECTED=1"
+) else (
+    set "MINGW_DETECTED=0"
+)
+
+if !FOUND_COMPILER! equ 0 (
+    echo Error: No supported compiler found.
+    echo Please install MinGW or Visual Studio.
+    pause
+    exit /b 1
+)
+
+:: Build the library
+echo.
+echo Building EasyUI library...
+call scripts\build_libs.bat
 if %errorlevel% neq 0 (
     echo Error: Build failed
-    exit /b %errorlevel%
+    pause
+    exit /b 1
 )
-
-echo.
-echo Creating installation directories...
 
 :: Create installation directories
-if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-if not exist "%INSTALL_DIR%\include" mkdir "%INSTALL_DIR%\include"
-if not exist "%INSTALL_DIR%\lib" mkdir "%INSTALL_DIR%\lib"
-if not exist "%INSTALL_DIR%\examples" mkdir "%INSTALL_DIR%\examples"
+set "INSTALL_ROOT=%ProgramFiles%\EasyUI"
+set "INCLUDE_DIR=%INSTALL_ROOT%\include"
+set "LIB_DIR=%INSTALL_ROOT%\lib"
+set "EXAMPLES_DIR=%INSTALL_ROOT%\examples"
 
-:: Copy files
-echo Copying files...
+echo.
+echo Installing to %INSTALL_ROOT%...
+
+if not exist "%INSTALL_ROOT%" mkdir "%INSTALL_ROOT%"
+if not exist "%INCLUDE_DIR%" mkdir "%INCLUDE_DIR%"
+if not exist "%LIB_DIR%" mkdir "%LIB_DIR%"
+if not exist "%EXAMPLES_DIR%" mkdir "%EXAMPLES_DIR%"
 
 :: Copy header files
-xcopy /Y /Q "include\*.h" "%INSTALL_DIR%\include\"
-xcopy /Y /Q "src\core\*.h" "%INSTALL_DIR%\include\core\"
-xcopy /Y /Q "src\styles\*.h" "%INSTALL_DIR%\include\styles\"
-xcopy /Y /Q "src\window\*.h" "%INSTALL_DIR%\include\window\"
-xcopy /Y /Q "src\graphics\*.h" "%INSTALL_DIR%\include\graphics\"
+echo Copying header files...
+xcopy /Y "include\*.h" "%INCLUDE_DIR%\"
 
 :: Copy libraries
-xcopy /Y /Q "libs\msvc\*.lib" "%INSTALL_DIR%\lib\"
-
-:: Copy examples
-xcopy /Y /Q "examples\*.*" "%INSTALL_DIR%\examples\"
-
-:: Add to system PATH if not already present
-echo Updating system PATH...
-for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path ^| findstr /i "^Path"') do set CURRENT_PATH=%%b
-echo %CURRENT_PATH% | findstr /i /c:"%INSTALL_DIR%\lib" >nul
-if %errorlevel% neq 0 (
-    setx /M PATH "%CURRENT_PATH%;%INSTALL_DIR%\lib"
-    if %errorlevel% neq 0 (
-        echo Warning: Failed to update system PATH
-    ) else (
-        echo System PATH updated successfully
+echo Copying libraries...
+if %MINGW_DETECTED% equ 1 (
+    if exist "libs\mingw\libeasyui.a" (
+        xcopy /Y "libs\mingw\libeasyui.a" "%LIB_DIR%\"
     )
-) else (
-    echo %INSTALL_DIR%\lib already in system PATH
+)
+if %MSVC_DETECTED% equ 1 (
+    if exist "libs\msvc\easyui.lib" (
+        xcopy /Y "libs\msvc\easyui.lib" "%LIB_DIR%\"
+    )
 )
 
+:: Copy examples
+echo Copying examples...
+xcopy /Y "examples\*.c" "%EXAMPLES_DIR%\"
+xcopy /Y "examples\CMakeLists.txt" "%EXAMPLES_DIR%\"
+
+:: Create a .pc file for pkg-config
+echo Creating pkg-config file...
+set PC_FILE=%LIB_DIR%\easyui.pc
+echo prefix=%INSTALL_ROOT%> "%PC_FILE%"
+echo exec_prefix=${prefix}>> "%PC_FILE%"
+echo libdir=${exec_prefix}/lib>> "%PC_FILE%"
+echo includedir=${prefix}/include>> "%PC_FILE%"
+echo.>> "%PC_FILE%"
+echo Name: EasyUI>> "%PC_FILE%"
+echo Description: A lightweight and easy-to-use GUI library for C>> "%PC_FILE%"
+echo Version: 1.0.0>> "%PC_FILE%"
+echo Libs: -L${libdir} -leasyui -lgdi32 -luser32>> "%PC_FILE%"
+echo Cflags: -I${includedir}>> "%PC_FILE%"
+
+:: Add to system PATH
+echo Adding to system PATH...
+setx PATH "%PATH%;%INSTALL_ROOT%\lib" /M
+
 echo.
-echo Installation completed successfully!
-echo.
-echo Installation directory: %INSTALL_DIR%
+echo Installation complete!
 echo.
 echo To use EasyUI in your projects:
-echo 1. Include the header files from %INSTALL_DIR%\include
-echo 2. Link against the library in %INSTALL_DIR%\lib
-echo 3. Check out the examples in %INSTALL_DIR%\examples
 echo.
-echo Note: You may need to restart your development environment
-echo      for the PATH changes to take effect.
-
-exit /b 0
+echo For MinGW:
+echo gcc your_program.c -I"%INCLUDE_DIR%" -L"%LIB_DIR%" -leasyui -lgdi32 -luser32 -o your_program
+echo.
+echo For Visual Studio:
+echo cl your_program.c /I"%INCLUDE_DIR%" /link "%LIB_DIR%\easyui.lib" gdi32.lib user32.lib
+echo.
+echo Example programs are available in: %EXAMPLES_DIR%
+echo.
+pause
