@@ -10,9 +10,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# CI Build option
-option(CI_BUILD "Build in CI environment" OFF)
-
 # Platform detection
 if(WIN32)
     set(EASYUI_PLATFORM_WINDOWS TRUE)
@@ -85,11 +82,5 @@ enable_testing()
 add_executable(easyui_tests tests/main.c)
 target_link_libraries(easyui_tests PRIVATE easyui)
 
-# Skip GUI tests in CI environment
-if(CI_BUILD)
-    target_compile_definitions(easyui_tests PRIVATE CI_BUILD)
-endif()
-
 # Add test
 add_test(NAME easyui_test COMMAND easyui_tests)
-set_tests_properties(easyui_test PROPERTIES ENVIRONMENT "CI_BUILD=$<BOOL:${CI_BUILD}>")

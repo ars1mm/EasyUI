@@ -31,14 +31,12 @@ void test_shape_style() {
     printf("Shape style test passed\n");
 }
 
-#ifndef CI_BUILD
 void test_window_creation() {
     struct EUI_Window* window = EUI_CreateWindow("Test Window", 100, 100, 800, 600);
     assert(window != NULL);
     EUI_DestroyWindow(window);
     printf("Window creation test passed\n");
 }
-#endif
 
 int main() {
     printf("Running EasyUI tests...\n");
@@ -47,11 +45,7 @@ int main() {
     test_point_struct();
     test_rect_struct();
     test_shape_style();
-    
-#ifndef CI_BUILD
-    // Run window tests only when not in CI
     test_window_creation();
-#endif
     
     printf("All tests passed!\n");
     return 0;
