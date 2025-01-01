@@ -12,6 +12,12 @@ struct EUI_TextStyle;
 #cmakedefine EASYUI_PLATFORM_LINUX
 #cmakedefine EASYUI_PLATFORM_MACOS
 
+/* Common types */
+typedef struct {
+    int x;
+    int y;
+} EUI_Point;
+
 /* Platform-specific includes */
 #ifdef EASYUI_PLATFORM_WINDOWS
     #define WIN32_LEAN_AND_MEAN
@@ -20,6 +26,8 @@ struct EUI_TextStyle;
     #define NOMINMAX
     typedef HWND EUI_NativeWindow;
     typedef HDC EUI_NativeContext;
+    typedef HWND EUI_WindowHandle;
+    typedef POINT EUI_NativePoint;
     #define EUI_RGB(r,g,b) RGB(r,g,b)
 #elif defined(EASYUI_PLATFORM_LINUX)
     #include <X11/Xlib.h>
@@ -27,16 +35,21 @@ struct EUI_TextStyle;
     #include <X11/Xatom.h>
     typedef Window EUI_NativeWindow;
     typedef GC EUI_NativeContext;
+    typedef Window EUI_WindowHandle;
+    typedef XPoint EUI_NativePoint;
     #define EUI_RGB(r,g,b) ((r << 16) | (g << 8) | b)
 #elif defined(EASYUI_PLATFORM_MACOS)
     #ifdef __OBJC__
         #import <Cocoa/Cocoa.h>
         typedef NSWindow* EUI_NativeWindow;
         typedef NSGraphicsContext* EUI_NativeContext;
+        typedef NSWindow* EUI_WindowHandle;
     #else
         typedef void* EUI_NativeWindow;
         typedef void* EUI_NativeContext;
+        typedef void* EUI_WindowHandle;
     #endif
+    typedef struct { int x; int y; } EUI_NativePoint;
     #define EUI_RGB(r,g,b) ((r << 16) | (g << 8) | b)
 #else
     #error "Unsupported platform"
@@ -49,6 +62,14 @@ struct EUI_TextStyle;
     void EUI_ProcessMessagesWin32(void);
     void EUI_DrawRectangleExWin32(struct EUI_Window* window, int x, int y, int width, int height, const struct EUI_ShapeStyle* style);
     void EUI_DrawTextExWin32(struct EUI_Window* window, const char* text, int x, int y, const struct EUI_TextStyle* style);
+#elif defined(EASYUI_PLATFORM_LINUX)
+    EUI_Window* EUI_CreateWindowX11(const char* title, int x, int y, int width, int height);
+    void EUI_ShowWindowX11(EUI_Window* window);
+    void EUI_ProcessMessagesX11(void);
+#elif defined(EASYUI_PLATFORM_MACOS)
+    EUI_Window* EUI_CreateWindowCocoa(const char* title, int x, int y, int width, int height);
+    void EUI_ShowWindowCocoa(EUI_Window* window);
+    void EUI_ProcessMessagesCocoa(void);
 #endif
 
 #endif /* EASYUI_PLATFORM_H */

@@ -87,8 +87,8 @@ void EUI_DrawEllipseEx(EUI_Window* window, int centerX, int centerY, int radiusX
 void EUI_DrawTriangle(EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3);
 void EUI_DrawTriangleEx(EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3, const EUI_ShapeStyle* style);
 
-void EUI_DrawPolygon(EUI_Window* window, POINT* points, int numPoints);
-void EUI_DrawPolygonEx(EUI_Window* window, POINT* points, int numPoints, const EUI_ShapeStyle* style);
+void EUI_DrawPolygon(EUI_Window* window, EUI_Point* points, int numPoints);
+void EUI_DrawPolygonEx(EUI_Window* window, EUI_Point* points, int numPoints, const EUI_ShapeStyle* style);
 
 void EUI_DrawArc(EUI_Window* window, int x, int y, int width, int height, int startAngle, int sweepAngle);
 void EUI_DrawArcEx(EUI_Window* window, int x, int y, int width, int height, int startAngle, int sweepAngle, const EUI_LineStyle* style);

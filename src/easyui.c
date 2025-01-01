@@ -1,5 +1,7 @@
 #include "easyui.h"
 #include "easyui_platform.h"
+#include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 // Default styles
@@ -25,19 +27,19 @@ const EUI_TextStyle EUI_DEFAULT_TEXT_STYLE = {
 
 // Core EasyUI implementation that delegates to platform-specific code
 EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     return EUI_CreateWindowWin32(title, x, y, width, height);
 #elif defined(EASYUI_PLATFORM_LINUX)
     return EUI_CreateWindowX11(title, x, y, width, height);
 #elif defined(EASYUI_PLATFORM_MACOS)
     return EUI_CreateWindowCocoa(title, x, y, width, height);
 #else
-    #error "Unsupported platform"
+    return NULL;
 #endif
 }
 
 void EUI_ShowWindow(EUI_Window* window) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     EUI_ShowWindowWin32(window);
 #elif defined(EASYUI_PLATFORM_LINUX)
     EUI_ShowWindowX11(window);
@@ -47,7 +49,7 @@ void EUI_ShowWindow(EUI_Window* window) {
 }
 
 void EUI_ProcessMessages(void) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     EUI_ProcessMessagesWin32();
 #elif defined(EASYUI_PLATFORM_LINUX)
     EUI_ProcessMessagesX11();
@@ -57,7 +59,7 @@ void EUI_ProcessMessages(void) {
 }
 
 void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     HDC hdc = GetDC(window->handle);
     HPEN pen = CreatePen(PS_SOLID, style->borderWidth, style->borderColor);
     HBRUSH brush = CreateSolidBrush(style->fillColor);
@@ -104,7 +106,7 @@ void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height
 }
 
 void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     HDC hdc = GetDC(window->handle);
     HFONT font = CreateFont(style->fontSize, 0, 0, 0, FW_NORMAL, 0, 0, 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, style->fontFamily);
     HFONT oldFont = SelectObject(hdc, font);
@@ -164,7 +166,7 @@ void EUI_DrawLine(EUI_Window* window, int x1, int y1, int x2, int y2) {
 }
 
 void EUI_DrawLineEx(EUI_Window* window, int x1, int y1, int x2, int y2, const EUI_LineStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     HDC hdc = GetDC(window->handle);
     HPEN pen = CreatePen(PS_SOLID, style->width, style->color);
     HPEN oldPen = SelectObject(hdc, pen);
@@ -206,7 +208,7 @@ void EUI_DrawCircle(EUI_Window* window, int centerX, int centerY, int radius) {
 }
 
 void EUI_DrawCircleEx(EUI_Window* window, int centerX, int centerY, int radius, const EUI_ShapeStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     HDC hdc = GetDC(window->handle);
     HPEN pen = CreatePen(PS_SOLID, style->borderWidth, style->borderColor);
     HBRUSH brush = CreateSolidBrush(style->fillColor);
@@ -257,7 +259,7 @@ void EUI_DrawEllipse(EUI_Window* window, int x, int y, int width, int height) {
 }
 
 void EUI_DrawEllipseEx(EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     HDC hdc = GetDC(window->handle);
     HPEN pen = CreatePen(PS_SOLID, style->borderWidth, style->borderColor);
     HBRUSH brush = CreateSolidBrush(style->fillColor);
@@ -308,7 +310,7 @@ void EUI_DrawTriangle(EUI_Window* window, int x1, int y1, int x2, int y2, int x3
 }
 
 void EUI_DrawTriangleEx(EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3, const EUI_ShapeStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     HDC hdc = GetDC(window->handle);
     HPEN pen = CreatePen(PS_SOLID, style->borderWidth, style->borderColor);
     HBRUSH brush = CreateSolidBrush(style->fillColor);
@@ -360,60 +362,53 @@ void EUI_DrawTriangleEx(EUI_Window* window, int x1, int y1, int x2, int y2, int 
 #endif
 }
 
-void EUI_DrawPolygon(EUI_Window* window, POINT* points, int numPoints) {
-    EUI_DrawPolygonEx(window, points, numPoints, &EUI_DEFAULT_SHAPE_STYLE);
+void EUI_DrawPolygon(EUI_Window* window, EUI_Point* points, int numPoints) {
+    EUI_ShapeStyle style = { 0 };
+    style.fillColor = EUI_RGB(255, 255, 255);
+    style.strokeColor = EUI_RGB(0, 0, 0);
+    style.strokeWidth = 1;
+    EUI_DrawPolygonEx(window, points, numPoints, &style);
 }
 
-void EUI_DrawPolygonEx(EUI_Window* window, POINT* points, int numPoints, const EUI_ShapeStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
-    HDC hdc = GetDC(window->handle);
-    HPEN pen = CreatePen(PS_SOLID, style->borderWidth, style->borderColor);
+void EUI_DrawPolygonEx(EUI_Window* window, EUI_Point* points, int numPoints, const EUI_ShapeStyle* style) {
+#ifdef EASYUI_PLATFORM_WINDOWS
+    // Convert EUI_Point to POINT
+    POINT* winPoints = (POINT*)malloc(numPoints * sizeof(POINT));
+    for (int i = 0; i < numPoints; i++) {
+        winPoints[i].x = points[i].x;
+        winPoints[i].y = points[i].y;
+    }
+    // Draw polygon using Windows GDI
+    HPEN pen = CreatePen(PS_SOLID, style->strokeWidth, style->strokeColor);
     HBRUSH brush = CreateSolidBrush(style->fillColor);
-    HPEN oldPen = SelectObject(hdc, pen);
-    HBRUSH oldBrush = SelectObject(hdc, brush);
-    Polygon(hdc, points, numPoints);
-    SelectObject(hdc, oldPen);
-    SelectObject(hdc, oldBrush);
+    SelectObject(window->dc, pen);
+    SelectObject(window->dc, brush);
+    Polygon(window->dc, winPoints, numPoints);
     DeleteObject(pen);
     DeleteObject(brush);
-    ReleaseDC(window->handle, hdc);
+    free(winPoints);
 #elif defined(EASYUI_PLATFORM_LINUX)
-    if (!window || !window->handle) return;
-    Display* display = XOpenDisplay(NULL);
-    Window win = window->handle;
-    GC gc = XCreateGC(display, win, 0, NULL);
-    XSetForeground(display, gc, style->fillColor);
-    XFillPolygon(display, win, gc, points, numPoints, Convex, CoordModeOrigin);
-    XSetForeground(display, gc, style->borderColor);
-    XSetLineAttributes(display, gc, style->borderWidth, LineSolid, CapButt, JoinMiter);
-    XDrawPolygon(display, win, gc, points, numPoints, Convex, CoordModeOrigin);
-    XFreeGC(display, gc);
-    XFlush(display);
-#elif defined(EASYUI_PLATFORM_MACOS)
-    if (!window || !window->handle) return;
-    NSWindow* win = window->handle;
-    NSView* view = [win contentView];
-    [view lockFocus];
-    NSBezierPath* path = [NSBezierPath bezierPath];
-    [path moveToPoint:NSMakePoint(points[0].x, points[0].y)];
-    for (int i = 1; i < numPoints; i++) {
-        [path lineToPoint:NSMakePoint(points[i].x, points[i].y)];
+    // Convert EUI_Point to XPoint
+    XPoint* xPoints = (XPoint*)malloc(numPoints * sizeof(XPoint));
+    for (int i = 0; i < numPoints; i++) {
+        xPoints[i].x = points[i].x;
+        xPoints[i].y = points[i].y;
     }
-    [path closePath];
-    NSColor* fillColor = [NSColor colorWithRed:((style->fillColor >> 16) & 0xFF) / 255.0
-                                        green:((style->fillColor >> 8) & 0xFF) / 255.0
-                                         blue:(style->fillColor & 0xFF) / 255.0
-                                        alpha:1.0];
-    [fillColor set];
-    [path fill];
-    NSColor* borderColor = [NSColor colorWithRed:((style->borderColor >> 16) & 0xFF) / 255.0
-                                         green:((style->borderColor >> 8) & 0xFF) / 255.0
-                                          blue:(style->borderColor & 0xFF) / 255.0
-                                         alpha:1.0];
-    [borderColor set];
-    [path setLineWidth:style->borderWidth];
-    [path stroke];
-    [view unlockFocus];
+    // Draw polygon using X11
+    Display* display = XOpenDisplay(NULL);
+    if (display) {
+        GC gc = XCreateGC(display, window->handle, 0, NULL);
+        XSetForeground(display, gc, style->strokeColor);
+        XSetLineAttributes(display, gc, style->strokeWidth, LineSolid, CapRound, JoinRound);
+        XFillPolygon(display, window->handle, gc, xPoints, numPoints, Complex, CoordModeOrigin);
+        XSetForeground(display, gc, style->fillColor);
+        XDrawLines(display, window->handle, gc, xPoints, numPoints, CoordModeOrigin);
+        XFreeGC(display, gc);
+        XFlush(display);
+    }
+    free(xPoints);
+#elif defined(EASYUI_PLATFORM_MACOS)
+    // Cocoa implementation will be in a separate .m file
 #endif
 }
 
@@ -422,7 +417,7 @@ void EUI_DrawArc(EUI_Window* window, int x, int y, int width, int height, int st
 }
 
 void EUI_DrawArcEx(EUI_Window* window, int x, int y, int width, int height, int startAngle, int sweepAngle, const EUI_LineStyle* style) {
-#if defined(EASYUI_PLATFORM_WINDOWS)
+#ifdef EASYUI_PLATFORM_WINDOWS
     HDC hdc = GetDC(window->handle);
     HPEN pen = CreatePen(PS_SOLID, style->width, style->color);
     HPEN oldPen = SelectObject(hdc, pen);
