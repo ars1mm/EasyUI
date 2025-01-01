@@ -49,14 +49,16 @@ jobs:
       run: |
         cmake -B ${{github.workspace}}/build `
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} `
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
+          -DCI_BUILD=ON
 
     - name: Configure CMake on Unix
       if: runner.os != 'Windows'
       run: |
         cmake -B ${{github.workspace}}/build \
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCI_BUILD=ON
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{ matrix.build_type }}

@@ -144,7 +144,5 @@ else()
 endif()
 
 # Testing
-if(WIN32)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
+enable_testing()
+add_subdirectory(tests)
