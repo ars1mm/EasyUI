@@ -29,9 +29,14 @@ struct EUI_TextStyle;
     typedef GC EUI_NativeContext;
     #define EUI_RGB(r,g,b) ((r << 16) | (g << 8) | b)
 #elif defined(EASYUI_PLATFORM_MACOS)
-    #include <Cocoa/Cocoa.h>
-    typedef NSWindow* EUI_NativeWindow;
-    typedef NSGraphicsContext* EUI_NativeContext;
+    #ifdef __OBJC__
+        #import <Cocoa/Cocoa.h>
+        typedef NSWindow* EUI_NativeWindow;
+        typedef NSGraphicsContext* EUI_NativeContext;
+    #else
+        typedef void* EUI_NativeWindow;
+        typedef void* EUI_NativeContext;
+    #endif
     #define EUI_RGB(r,g,b) ((r << 16) | (g << 8) | b)
 #else
     #error "Unsupported platform"

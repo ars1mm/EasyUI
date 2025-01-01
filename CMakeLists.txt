@@ -17,6 +17,8 @@ elseif(UNIX AND NOT APPLE)
     set(EASYUI_PLATFORM_LINUX TRUE)
 elseif(APPLE)
     set(EASYUI_PLATFORM_MACOS TRUE)
+    enable_language(OBJC)
+    set(CMAKE_OBJC_FLAGS "${CMAKE_OBJC_FLAGS} -fobjc-arc")
 endif()
 
 # Configure platform-specific header
@@ -40,8 +42,8 @@ elseif(EASYUI_PLATFORM_LINUX)
     find_package(X11 REQUIRED)
 elseif(EASYUI_PLATFORM_MACOS)
     set(PLATFORM_SOURCES
-        src/platform/macos/window.c
-        src/platform/macos/graphics.c
+        src/platform/macos/window.m
+        src/platform/macos/graphics.m
     )
     find_library(COCOA_LIBRARY Cocoa REQUIRED)
 endif()
@@ -76,6 +78,12 @@ elseif(EASYUI_PLATFORM_LINUX)
     target_include_directories(easyui PRIVATE ${X11_INCLUDE_DIR})
 elseif(EASYUI_PLATFORM_MACOS)
     target_link_libraries(easyui PRIVATE ${COCOA_LIBRARY})
+    set_source_files_properties(
+        src/platform/macos/window.m
+        src/platform/macos/graphics.m
+        PROPERTIES
+        COMPILE_FLAGS "-x objective-c"
+    )
 endif()
 
 # Installation
