@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "easyui.h"
+#include "easyui_platform.h"
 
 // Default styles
 const EUI_LineStyle EUI_DEFAULT_LINE_STYLE = {
@@ -20,6 +21,59 @@ const EUI_TextStyle EUI_DEFAULT_TEXT_STYLE = {
     .fontSize = 12,
     .color = RGB(0, 0, 0)
 };
+
+// Core EasyUI implementation that delegates to platform-specific code
+EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height) {
+#if defined(EASYUI_PLATFORM_WINDOWS)
+    return EUI_CreateWindowWin32(title, x, y, width, height);
+#elif defined(EASYUI_PLATFORM_LINUX)
+    return EUI_CreateWindowX11(title, x, y, width, height);
+#elif defined(EASYUI_PLATFORM_MACOS)
+    return EUI_CreateWindowCocoa(title, x, y, width, height);
+#else
+    #error "Unsupported platform"
+#endif
+}
+
+void EUI_ShowWindow(EUI_Window* window) {
+#if defined(EASYUI_PLATFORM_WINDOWS)
+    EUI_ShowWindowWin32(window);
+#elif defined(EASYUI_PLATFORM_LINUX)
+    EUI_ShowWindowX11(window);
+#elif defined(EASYUI_PLATFORM_MACOS)
+    EUI_ShowWindowCocoa(window);
+#endif
+}
+
+void EUI_ProcessMessages(void) {
+#if defined(EASYUI_PLATFORM_WINDOWS)
+    EUI_ProcessMessagesWin32();
+#elif defined(EASYUI_PLATFORM_LINUX)
+    EUI_ProcessMessagesX11();
+#elif defined(EASYUI_PLATFORM_MACOS)
+    EUI_ProcessMessagesCocoa();
+#endif
+}
+
+void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style) {
+#if defined(EASYUI_PLATFORM_WINDOWS)
+    EUI_DrawRectangleExWin32(window, x, y, width, height, style);
+#elif defined(EASYUI_PLATFORM_LINUX)
+    EUI_DrawRectangleExX11(window, x, y, width, height, style);
+#elif defined(EASYUI_PLATFORM_MACOS)
+    EUI_DrawRectangleExCocoa(window, x, y, width, height, style);
+#endif
+}
+
+void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style) {
+#if defined(EASYUI_PLATFORM_WINDOWS)
+    EUI_DrawTextExWin32(window, text, x, y, style);
+#elif defined(EASYUI_PLATFORM_LINUX)
+    EUI_DrawTextExX11(window, text, x, y, style);
+#elif defined(EASYUI_PLATFORM_MACOS)
+    EUI_DrawTextExCocoa(window, text, x, y, style);
+#endif
+}
 
 // Window procedure
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -50,84 +104,6 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-// Window functions
-EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height) {
-    static WNDCLASSEX wc = {0};
-    static BOOL registered = FALSE;
-    
-    if (!registered) {
-        wc.cbSize = sizeof(WNDCLASSEX);
-        wc.lpfnWndProc = WindowProc;
-        wc.hInstance = GetModuleHandle(NULL);
-        wc.lpszClassName = "EasyUI_Window";
-        wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-        wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-        
-        if (!RegisterClassEx(&wc)) {
-            return NULL;
-        }
-        registered = TRUE;
-    }
-    
-    EUI_Window* window = (EUI_Window*)malloc(sizeof(EUI_Window));
-    if (!window) {
-        return NULL;
-    }
-    
-    window->rect.x = x;
-    window->rect.y = y;
-    window->rect.width = width;
-    window->rect.height = height;
-    window->style = EUI_WINDOW_NORMAL;
-    window->onPaint = NULL;
-    window->onClick = NULL;
-    
-    window->hwnd = CreateWindowEx(
-        0,
-        "EasyUI_Window",
-        title,
-        WS_OVERLAPPEDWINDOW,
-        x, y, width, height,
-        NULL,
-        NULL,
-        GetModuleHandle(NULL),
-        NULL
-    );
-    
-    if (!window->hwnd) {
-        free(window);
-        return NULL;
-    }
-    
-    SetWindowLongPtr(window->hwnd, GWLP_USERDATA, (LONG_PTR)window);
-    
-    return window;
-}
-
-void EUI_ShowWindow(EUI_Window* window) {
-    if (window && window->hwnd) {
-        ShowWindow(window->hwnd, SW_SHOW);
-        UpdateWindow(window->hwnd);
-    }
-}
-
-void EUI_DestroyWindow(EUI_Window* window) {
-    if (window) {
-        if (window->hwnd) {
-            DestroyWindow(window->hwnd);
-        }
-        free(window);
-    }
-}
-
-void EUI_ProcessMessages(void) {
-    MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-}
-
 // Drawing functions
 void EUI_DrawLine(EUI_Window* window, int x1, int y1, int x2, int y2) {
     EUI_DrawLineEx(window, x1, y1, x2, y2, &EUI_DEFAULT_LINE_STYLE);
@@ -146,29 +122,6 @@ void EUI_DrawLineEx(EUI_Window* window, int x1, int y1, int x2, int y2, const EU
     
     SelectObject(hdc, oldPen);
     DeleteObject(pen);
-    ReleaseDC(window->hwnd, hdc);
-}
-
-void EUI_DrawRectangle(EUI_Window* window, int x, int y, int width, int height) {
-    EUI_DrawRectangleEx(window, x, y, width, height, &EUI_DEFAULT_SHAPE_STYLE);
-}
-
-void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style) {
-    if (!window || !window->hwnd) return;
-    const EUI_ShapeStyle* s = style ? style : &EUI_DEFAULT_SHAPE_STYLE;
-    
-    HDC hdc = GetDC(window->hwnd);
-    HPEN pen = CreatePen(PS_SOLID, s->borderWidth, s->borderColor);
-    HBRUSH brush = CreateSolidBrush(s->fillColor);
-    HPEN oldPen = SelectObject(hdc, pen);
-    HBRUSH oldBrush = SelectObject(hdc, brush);
-    
-    Rectangle(hdc, x, y, x + width, y + height);
-    
-    SelectObject(hdc, oldPen);
-    SelectObject(hdc, oldBrush);
-    DeleteObject(pen);
-    DeleteObject(brush);
     ReleaseDC(window->hwnd, hdc);
 }
 
@@ -293,28 +246,5 @@ void EUI_DrawArcEx(EUI_Window* window, int x, int y, int width, int height, int 
     
     SelectObject(hdc, oldPen);
     DeleteObject(pen);
-    ReleaseDC(window->hwnd, hdc);
-}
-
-void EUI_DrawText(EUI_Window* window, const char* text, int x, int y) {
-    EUI_DrawTextEx(window, text, x, y, &EUI_DEFAULT_TEXT_STYLE);
-}
-
-void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style) {
-    if (!window || !window->hwnd || !text) return;
-    const EUI_TextStyle* s = style ? style : &EUI_DEFAULT_TEXT_STYLE;
-    
-    HDC hdc = GetDC(window->hwnd);
-    HFONT font = CreateFont(s->fontSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, s->fontName);
-    HFONT oldFont = SelectObject(hdc, font);
-    
-    SetTextColor(hdc, s->color);
-    SetBkMode(hdc, TRANSPARENT);
-    TextOut(hdc, x, y, text, strlen(text));
-    
-    SelectObject(hdc, oldFont);
-    DeleteObject(font);
     ReleaseDC(window->hwnd, hdc);
 }
