@@ -1,58 +1,63 @@
 #include <easyui.h>
-#include <windows.h>
 #include <math.h>
 
 // Custom styles
 static EUI_LineStyle redLine = {
-    .color = RGB(255, 0, 0),
-    .thickness = 2
+    .color = EUI_RGB(255, 0, 0),
+    .width = 2
 };
 
 static EUI_ShapeStyle blueRect = {
-    .fillColor = RGB(200, 200, 255),
-    .borderColor = RGB(0, 0, 255),
+    .fillColor = EUI_RGB(200, 200, 255),
+    .borderColor = EUI_RGB(0, 0, 255),
     .borderWidth = 2
 };
 
 static EUI_ShapeStyle redCircle = {
-    .fillColor = RGB(255, 200, 200),
-    .borderColor = RGB(255, 0, 0),
+    .fillColor = EUI_RGB(255, 200, 200),
+    .borderColor = EUI_RGB(255, 0, 0),
     .borderWidth = 2
 };
 
 static EUI_ShapeStyle greenEllipse = {
-    .fillColor = RGB(200, 255, 200),
-    .borderColor = RGB(0, 255, 0),
+    .fillColor = EUI_RGB(200, 255, 200),
+    .borderColor = EUI_RGB(0, 255, 0),
     .borderWidth = 2
 };
 
 static EUI_ShapeStyle yellowTriangle = {
-    .fillColor = RGB(255, 255, 200),
-    .borderColor = RGB(128, 128, 0),
+    .fillColor = EUI_RGB(255, 255, 200),
+    .borderColor = EUI_RGB(128, 128, 0),
     .borderWidth = 2
 };
 
 static EUI_ShapeStyle purpleHexagon = {
-    .fillColor = RGB(255, 200, 255),
-    .borderColor = RGB(255, 0, 255),
+    .fillColor = EUI_RGB(255, 200, 255),
+    .borderColor = EUI_RGB(255, 0, 255),
     .borderWidth = 2
 };
 
 static EUI_LineStyle orangeArc = {
-    .color = RGB(255, 128, 0),
-    .thickness = 2
+    .color = EUI_RGB(255, 128, 0),
+    .width = 2
 };
 
 static EUI_TextStyle titleText = {
-    .fontName = "Arial",
+    .fontFamily = "Arial",
     .fontSize = 20,
-    .color = RGB(0, 0, 0)
+    .color = EUI_RGB(0, 0, 0),
+    .bold = 0,
+    .italic = 0,
+    .underline = 0
 };
 
 static EUI_TextStyle labelText = {
-    .fontName = "Arial",
+    .fontFamily = "Arial",
     .fontSize = 12,
-    .color = RGB(0, 0, 0)
+    .color = EUI_RGB(0, 0, 0),
+    .bold = 0,
+    .italic = 0,
+    .underline = 0
 };
 
 void onPaint(EUI_Window* window) {
@@ -99,23 +104,26 @@ void onPaint(EUI_Window* window) {
 
 void onClick(EUI_Window* window, EUI_Point point) {
     // Add some interactivity - draw a small circle where the user clicks
-    static EUI_ShapeStyle clickDot = {
-        .fillColor = RGB(255, 0, 0),
-        .borderColor = RGB(128, 0, 0),
+    EUI_ShapeStyle clickStyle = {
+        .fillColor = EUI_RGB(255, 0, 0),
+        .borderColor = EUI_RGB(128, 0, 0),
         .borderWidth = 1
     };
-    EUI_DrawCircleEx(window, point.x, point.y, 5, &clickDot);
+    EUI_DrawCircleEx(window, point.x, point.y, 5, &clickStyle);
 }
 
 int main() {
-    EUI_Window* window = EUI_CreateWindow("Shapes Demo", 100, 100, 600, 400);
+    // Create main window
+    EUI_Window* window = EUI_CreateWindow("EasyUI Shapes Demo", 100, 100, 600, 400);
     if (!window) {
         return 1;
     }
     
+    // Set callbacks
     window->onPaint = onPaint;
     window->onClick = onClick;
     
+    // Show and run
     EUI_ShowWindow(window);
     EUI_ProcessMessages();
     

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(EasyUI VERSION 0.1.0 LANGUAGES C)
+project(EasyUI VERSION 1.0.0 LANGUAGES C)
 
 # Set C standard
 set(CMAKE_C_STANDARD 11)
@@ -10,55 +10,53 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Platform detection and configuration
+# Platform detection
 if(WIN32)
-    set(EASYUI_PLATFORM "WINDOWS")
-    set(PLATFORM_SOURCES
-        src/platform/windows/window.c
-        src/platform/windows/graphics.c
-    )
-    set(PLATFORM_LIBS gdi32 user32)
+    set(EASYUI_PLATFORM_WINDOWS TRUE)
 elseif(UNIX AND NOT APPLE)
-    set(EASYUI_PLATFORM "LINUX")
-    set(PLATFORM_SOURCES
-        src/platform/linux/window.c
-        src/platform/linux/graphics.c
-    )
-    set(PLATFORM_LIBS X11)
-    # Find X11
-    find_package(X11 REQUIRED)
-    if(NOT X11_FOUND)
-        message(FATAL_ERROR "X11 development files not found")
-    endif()
-    include_directories(${X11_INCLUDE_DIR})
+    set(EASYUI_PLATFORM_LINUX TRUE)
 elseif(APPLE)
-    set(EASYUI_PLATFORM "MACOS")
-    set(PLATFORM_SOURCES
-        src/platform/macos/window.c
-        src/platform/macos/graphics.c
-    )
-    set(PLATFORM_LIBS "-framework Cocoa")
-else()
-    message(FATAL_ERROR "Unsupported platform")
+    set(EASYUI_PLATFORM_MACOS TRUE)
 endif()
 
 # Configure platform-specific header
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/easyui_platform.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/include/easyui_platform.h
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/easyui_platform.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/easyui_platform.h"
 )
 
-# Library source files
-set(EASYUI_SOURCES
+# Platform-specific source files
+set(PLATFORM_SOURCES "")
+if(EASYUI_PLATFORM_WINDOWS)
+    set(PLATFORM_SOURCES
+        src/platform/windows/window.c
+        src/platform/windows/graphics.c
+    )
+elseif(EASYUI_PLATFORM_LINUX)
+    set(PLATFORM_SOURCES
+        src/platform/linux/window.c
+        src/platform/linux/graphics.c
+    )
+    find_package(X11 REQUIRED)
+elseif(EASYUI_PLATFORM_MACOS)
+    set(PLATFORM_SOURCES
+        src/platform/macos/window.c
+        src/platform/macos/graphics.c
+    )
+    find_library(COCOA_LIBRARY Cocoa REQUIRED)
+endif()
+
+# Core library sources
+set(CORE_SOURCES
     src/easyui.c
     src/styles/styles.c
     src/window/window.c
     src/graphics/graphics.c
-    ${PLATFORM_SOURCES}
 )
 
 # Create the library
-add_library(easyui STATIC ${EASYUI_SOURCES})
+add_library(easyui ${CORE_SOURCES} ${PLATFORM_SOURCES})
+add_library(EasyUI::easyui ALIAS easyui)
 
 # Include directories
 target_include_directories(easyui
@@ -70,13 +68,64 @@ target_include_directories(easyui
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# Platform-specific libraries
-target_link_libraries(easyui PRIVATE ${PLATFORM_LIBS})
+# Platform-specific dependencies
+if(EASYUI_PLATFORM_WINDOWS)
+    target_link_libraries(easyui PRIVATE gdi32 user32)
+elseif(EASYUI_PLATFORM_LINUX)
+    target_link_libraries(easyui PRIVATE ${X11_LIBRARIES})
+    target_include_directories(easyui PRIVATE ${X11_INCLUDE_DIR})
+elseif(EASYUI_PLATFORM_MACOS)
+    target_link_libraries(easyui PRIVATE ${COCOA_LIBRARY})
+endif()
 
-# Platform-specific definitions
-target_compile_definitions(easyui 
-    PUBLIC
-        EASYUI_PLATFORM_${EASYUI_PLATFORM}
+# Installation
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+install(TARGETS easyui
+    EXPORT EasyUITargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    FILES
+        include/easyui.h
+        "${CMAKE_CURRENT_BINARY_DIR}/include/easyui_platform.h"
+    DESTINATION
+        ${CMAKE_INSTALL_INCLUDEDIR}/easyui
+)
+
+# Export targets
+install(EXPORT EasyUITargets
+    FILE EasyUITargets.cmake
+    NAMESPACE EasyUI::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/EasyUI
+)
+
+# Create config file
+configure_package_config_file(
+    cmake/EasyUIConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/EasyUI
+)
+
+# Create version file
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# Install config files
+install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfigVersion.cmake"
+    DESTINATION
+        ${CMAKE_INSTALL_LIBDIR}/cmake/EasyUI
 )
 
 # Examples
@@ -85,47 +134,6 @@ if(WIN32)
 else()
     message(STATUS "Examples are currently only supported on Windows")
 endif()
-
-# Installation
-install(TARGETS easyui
-    EXPORT easyui-targets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-install(FILES 
-    include/easyui.h
-    ${CMAKE_CURRENT_BINARY_DIR}/include/easyui_platform.h
-    DESTINATION include
-)
-
-install(EXPORT easyui-targets
-    FILE EasyUITargets.cmake
-    NAMESPACE EasyUI::
-    DESTINATION lib/cmake/easyui
-)
-
-# Create and install config file
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/EasyUIConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfig.cmake
-    INSTALL_DESTINATION lib/cmake/easyui
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/EasyUIConfigVersion.cmake
-    DESTINATION lib/cmake/easyui
-)
 
 # Testing
 if(WIN32)

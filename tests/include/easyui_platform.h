@@ -8,9 +8,9 @@ struct EUI_ShapeStyle;
 struct EUI_TextStyle;
 
 /* Platform detection */
-#cmakedefine EASYUI_PLATFORM_WINDOWS
-#cmakedefine EASYUI_PLATFORM_LINUX
-#cmakedefine EASYUI_PLATFORM_MACOS
+#define EASYUI_PLATFORM_WINDOWS
+/* #undef EASYUI_PLATFORM_LINUX */
+/* #undef EASYUI_PLATFORM_MACOS */
 
 /* Platform-specific includes */
 #ifdef EASYUI_PLATFORM_WINDOWS

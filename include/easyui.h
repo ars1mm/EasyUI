@@ -1,8 +1,7 @@
 #ifndef EASYUI_H
 #define EASYUI_H
 
-#include <windows.h>
-#include <stdint.h>
+#include "easyui_platform.h"
 
 // Point structure
 typedef struct {
@@ -26,34 +25,40 @@ typedef struct {
 
 // Style structures
 typedef struct {
-    COLORREF color;
-    int thickness;
+    unsigned long color;
+    int width;
 } EUI_LineStyle;
 
 typedef struct {
-    COLORREF fillColor;
-    COLORREF borderColor;
+    unsigned long fillColor;
+    unsigned long borderColor;
     int borderWidth;
 } EUI_ShapeStyle;
 
 typedef struct {
-    const char* fontName;
+    unsigned long color;
     int fontSize;
-    COLORREF color;
+    const char* fontFamily;
+    int bold;
+    int italic;
+    int underline;
 } EUI_TextStyle;
+
+// Window styles
+typedef enum {
+    EUI_WINDOW_NORMAL = 0,
+    EUI_WINDOW_BORDERLESS = 1,
+    EUI_WINDOW_FULLSCREEN = 2
+} EUI_WindowStyle;
 
 // Window structure
 typedef struct EUI_Window {
-    HWND hwnd;
     EUI_Rect rect;
-    uint32_t style;
+    EUI_WindowStyle style;
+    EUI_NativeWindow handle;
     void (*onPaint)(struct EUI_Window*);
     void (*onClick)(struct EUI_Window*, EUI_Point);
 } EUI_Window;
-
-// Window styles
-#define EUI_WINDOW_NORMAL     0x00000001
-#define EUI_WINDOW_POPUP      0x00000002
 
 // Default styles
 extern const EUI_LineStyle EUI_DEFAULT_LINE_STYLE;
@@ -76,8 +81,8 @@ void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height
 void EUI_DrawCircle(EUI_Window* window, int centerX, int centerY, int radius);
 void EUI_DrawCircleEx(EUI_Window* window, int centerX, int centerY, int radius, const EUI_ShapeStyle* style);
 
-void EUI_DrawEllipse(EUI_Window* window, int x, int y, int width, int height);
-void EUI_DrawEllipseEx(EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style);
+void EUI_DrawEllipse(EUI_Window* window, int centerX, int centerY, int radiusX, int radiusY);
+void EUI_DrawEllipseEx(EUI_Window* window, int centerX, int centerY, int radiusX, int radiusY, const EUI_ShapeStyle* style);
 
 void EUI_DrawTriangle(EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3);
 void EUI_DrawTriangleEx(EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3, const EUI_ShapeStyle* style);
@@ -91,4 +96,4 @@ void EUI_DrawArcEx(EUI_Window* window, int x, int y, int width, int height, int 
 void EUI_DrawText(EUI_Window* window, const char* text, int x, int y);
 void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style);
 
-#endif // EASYUI_H
+#endif /* EASYUI_H */
