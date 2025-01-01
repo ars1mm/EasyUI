@@ -2,21 +2,22 @@
 #define EASYUI_H
 
 #include "easyui_platform.h"
+#include <stdlib.h>
 
 // Point structure
-typedef struct {
+typedef struct EUI_Point {
     int x;
     int y;
 } EUI_Point;
 
 // Size structure
-typedef struct {
+typedef struct EUI_Size {
     int width;
     int height;
 } EUI_Size;
 
 // Rect structure
-typedef struct {
+typedef struct EUI_Rect {
     int x;
     int y;
     int width;
@@ -24,21 +25,22 @@ typedef struct {
 } EUI_Rect;
 
 // Style structures
-typedef struct {
+typedef struct EUI_LineStyle {
     unsigned long color;
     int width;
+    int style;  // Solid, dashed, etc.
 } EUI_LineStyle;
 
-typedef struct {
+typedef struct EUI_ShapeStyle {
     unsigned long fillColor;
-    unsigned long borderColor;
-    int borderWidth;
+    unsigned long strokeColor;  // Changed from borderColor
+    int strokeWidth;           // Changed from borderWidth
 } EUI_ShapeStyle;
 
-typedef struct {
+typedef struct EUI_TextStyle {
     unsigned long color;
-    int fontSize;
     const char* fontFamily;
+    int fontSize;
     int bold;
     int italic;
     int underline;
@@ -66,34 +68,34 @@ extern const EUI_ShapeStyle EUI_DEFAULT_SHAPE_STYLE;
 extern const EUI_TextStyle EUI_DEFAULT_TEXT_STYLE;
 
 // Window functions
-EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height);
-void EUI_ShowWindow(EUI_Window* window);
-void EUI_DestroyWindow(EUI_Window* window);
+struct EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height);
+void EUI_ShowWindow(struct EUI_Window* window);
+void EUI_DestroyWindow(struct EUI_Window* window);
 void EUI_ProcessMessages(void);
 
 // Drawing functions
-void EUI_DrawLine(EUI_Window* window, int x1, int y1, int x2, int y2);
-void EUI_DrawLineEx(EUI_Window* window, int x1, int y1, int x2, int y2, const EUI_LineStyle* style);
+void EUI_DrawLine(struct EUI_Window* window, int x1, int y1, int x2, int y2);
+void EUI_DrawLineEx(struct EUI_Window* window, int x1, int y1, int x2, int y2, const EUI_LineStyle* style);
 
-void EUI_DrawRectangle(EUI_Window* window, int x, int y, int width, int height);
-void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style);
+void EUI_DrawRectangle(struct EUI_Window* window, int x, int y, int width, int height, const struct EUI_ShapeStyle* style);
+void EUI_DrawRectangleEx(struct EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style);
 
-void EUI_DrawCircle(EUI_Window* window, int centerX, int centerY, int radius);
-void EUI_DrawCircleEx(EUI_Window* window, int centerX, int centerY, int radius, const EUI_ShapeStyle* style);
+void EUI_DrawCircle(struct EUI_Window* window, int centerX, int centerY, int radius);
+void EUI_DrawCircleEx(struct EUI_Window* window, int centerX, int centerY, int radius, const EUI_ShapeStyle* style);
 
-void EUI_DrawEllipse(EUI_Window* window, int centerX, int centerY, int radiusX, int radiusY);
-void EUI_DrawEllipseEx(EUI_Window* window, int centerX, int centerY, int radiusX, int radiusY, const EUI_ShapeStyle* style);
+void EUI_DrawEllipse(struct EUI_Window* window, int centerX, int centerY, int radiusX, int radiusY);
+void EUI_DrawEllipseEx(struct EUI_Window* window, int centerX, int centerY, int radiusX, int radiusY, const EUI_ShapeStyle* style);
 
-void EUI_DrawTriangle(EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3);
-void EUI_DrawTriangleEx(EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3, const EUI_ShapeStyle* style);
+void EUI_DrawTriangle(struct EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3);
+void EUI_DrawTriangleEx(struct EUI_Window* window, int x1, int y1, int x2, int y2, int x3, int y3, const EUI_ShapeStyle* style);
 
-void EUI_DrawPolygon(EUI_Window* window, EUI_Point* points, int numPoints);
-void EUI_DrawPolygonEx(EUI_Window* window, EUI_Point* points, int numPoints, const EUI_ShapeStyle* style);
+void EUI_DrawPolygon(struct EUI_Window* window, const EUI_Point* points, int numPoints, const struct EUI_ShapeStyle* style);
+void EUI_DrawPolygonEx(struct EUI_Window* window, EUI_Point* points, int numPoints, const EUI_ShapeStyle* style);
 
-void EUI_DrawArc(EUI_Window* window, int x, int y, int width, int height, int startAngle, int sweepAngle);
-void EUI_DrawArcEx(EUI_Window* window, int x, int y, int width, int height, int startAngle, int sweepAngle, const EUI_LineStyle* style);
+void EUI_DrawArc(struct EUI_Window* window, int x, int y, int width, int height, int startAngle, int sweepAngle);
+void EUI_DrawArcEx(struct EUI_Window* window, int x, int y, int width, int height, int startAngle, int sweepAngle, const EUI_LineStyle* style);
 
-void EUI_DrawText(EUI_Window* window, const char* text, int x, int y);
-void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style);
+void EUI_DrawText(struct EUI_Window* window, const char* text, int x, int y, const struct EUI_TextStyle* style);
+void EUI_DrawTextEx(struct EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style);
 
 #endif /* EASYUI_H */
