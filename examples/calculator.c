@@ -1,7 +1,7 @@
 #include <easyui.h>
 #include <stdio.h>
 #include <string.h>
-#include <windows.h>
+#include <math.h>
 
 // Calculator state
 static char display[32] = "0";
@@ -13,29 +13,29 @@ static int clear_on_next = 1;
 // Button definitions
 typedef struct {
     const char* label;
-    int x, y;
-    int width, height;
-    RECT rect;  // Added for hit testing
+    EUI_Rect rect;
+    EUI_ShapeStyle style;
+    EUI_TextStyle textStyle;
 } Button;
 
 static Button buttons[] = {
-    {"7", 10, 60, 50, 40},
-    {"8", 70, 60, 50, 40},
-    {"9", 130, 60, 50, 40},
-    {"/", 190, 60, 50, 40},
-    {"4", 10, 110, 50, 40},
-    {"5", 70, 110, 50, 40},
-    {"6", 130, 110, 50, 40},
-    {"*", 190, 110, 50, 40},
-    {"1", 10, 160, 50, 40},
-    {"2", 70, 160, 50, 40},
-    {"3", 130, 160, 50, 40},
-    {"-", 190, 160, 50, 40},
-    {"0", 10, 210, 110, 40},
-    {".", 130, 210, 50, 40},
-    {"+", 190, 210, 50, 40},
-    {"=", 250, 160, 50, 90},
-    {"C", 250, 60, 50, 90}
+    {"7",  {10, 60, 50, 40}},
+    {"8",  {70, 60, 50, 40}},
+    {"9",  {130, 60, 50, 40}},
+    {"/",  {190, 60, 50, 40}},
+    {"4",  {10, 110, 50, 40}},
+    {"5",  {70, 110, 50, 40}},
+    {"6",  {130, 110, 50, 40}},
+    {"*",  {190, 110, 50, 40}},
+    {"1",  {10, 160, 50, 40}},
+    {"2",  {70, 160, 50, 40}},
+    {"3",  {130, 160, 50, 40}},
+    {"-",  {190, 160, 50, 40}},
+    {"0",  {10, 210, 110, 40}},
+    {".",  {130, 210, 50, 40}},
+    {"+",  {190, 210, 50, 40}},
+    {"=",  {250, 160, 50, 90}},
+    {"C",  {250, 60, 50, 90}}
 };
 
 // Forward declarations
@@ -45,103 +45,66 @@ static void handle_operator(char op);
 static void handle_equals(void);
 static void handle_clear(void);
 
-void draw_button(HDC hdc, Button* btn, BOOL pressed) {
-    // Update button rectangle
-    btn->rect.left = btn->x;
-    btn->rect.top = btn->y;
-    btn->rect.right = btn->x + btn->width;
-    btn->rect.bottom = btn->y + btn->height;
+void draw_button(EUI_Window* window, Button* btn, int pressed) {
+    // Set up button styles
+    btn->style = EUI_DEFAULT_SHAPE_STYLE;
+    btn->style.fillColor = RGB(240, 240, 240);
+    btn->style.borderColor = pressed ? RGB(128, 128, 128) : RGB(200, 200, 200);
+    btn->style.borderWidth = 1;
+
+    btn->textStyle = EUI_DEFAULT_TEXT_STYLE;
+    btn->textStyle.fontSize = 14;
 
     // Draw button background
-    HBRUSH brush = CreateSolidBrush(RGB(240, 240, 240));
-    FillRect(hdc, &btn->rect, brush);
-    DeleteObject(brush);
-
-    // Draw 3D effect
-    if (!pressed) {
-        // Raised effect
-        HPEN lightPen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
-        HPEN darkPen = CreatePen(PS_SOLID, 1, RGB(128, 128, 128));
-        
-        SelectObject(hdc, lightPen);
-        MoveToEx(hdc, btn->x, btn->y + btn->height - 1, NULL);
-        LineTo(hdc, btn->x, btn->y);
-        LineTo(hdc, btn->x + btn->width - 1, btn->y);
-        
-        SelectObject(hdc, darkPen);
-        LineTo(hdc, btn->x + btn->width - 1, btn->y + btn->height - 1);
-        LineTo(hdc, btn->x, btn->y + btn->height - 1);
-        
-        DeleteObject(lightPen);
-        DeleteObject(darkPen);
-    } else {
-        // Pressed effect
-        HPEN darkPen = CreatePen(PS_SOLID, 1, RGB(128, 128, 128));
-        SelectObject(hdc, darkPen);
-        Rectangle(hdc, btn->x, btn->y, btn->x + btn->width, btn->y + btn->height);
-        DeleteObject(darkPen);
-    }
+    EUI_DrawRectangleEx(window, btn->rect.x, btn->rect.y, 
+                       btn->rect.width, btn->rect.height, &btn->style);
 
     // Draw button text
-    SetBkMode(hdc, TRANSPARENT);
-    RECT textRect = btn->rect;
+    int textX = btn->rect.x + (btn->rect.width - strlen(btn->label) * 8) / 2;
+    int textY = btn->rect.y + (btn->rect.height - 14) / 2;
     if (pressed) {
-        textRect.left += 1;
-        textRect.top += 1;
+        textX += 1;
+        textY += 1;
     }
-    DrawText(hdc, btn->label, -1, &textRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+    EUI_DrawTextEx(window, btn->label, textX, textY, &btn->textStyle);
 }
 
-void draw_display(HDC hdc) {
+void draw_display(EUI_Window* window) {
     // Draw display background
-    RECT displayRect = {10, 10, 290, 50};
-    HBRUSH brush = CreateSolidBrush(RGB(230, 230, 230));
-    FillRect(hdc, &displayRect, brush);
-    DeleteObject(brush);
-
-    // Draw display border
-    HPEN pen = CreatePen(PS_SOLID, 1, RGB(128, 128, 128));
-    SelectObject(hdc, pen);
-    Rectangle(hdc, 10, 10, 290, 50);
-    DeleteObject(pen);
+    EUI_ShapeStyle displayStyle = EUI_DEFAULT_SHAPE_STYLE;
+    displayStyle.fillColor = RGB(230, 230, 230);
+    displayStyle.borderColor = RGB(200, 200, 200);
+    displayStyle.borderWidth = 1;
+    EUI_DrawRectangleEx(window, 10, 10, 280, 40, &displayStyle);
 
     // Draw display text
-    SetBkMode(hdc, TRANSPARENT);
-    HFONT font = CreateFont(24, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
-                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                          DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Arial");
-    SelectObject(hdc, font);
-    RECT textRect = {15, 15, 285, 45};
-    DrawText(hdc, display, -1, &textRect, DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-    DeleteObject(font);
+    EUI_TextStyle textStyle = EUI_DEFAULT_TEXT_STYLE;
+    textStyle.fontSize = 20;
+    textStyle.color = RGB(0, 0, 0);
+    EUI_DrawTextEx(window, display, 20, 20, &textStyle);
 }
 
 void onPaint(EUI_Window* window) {
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(window->hwnd, &ps);
-    
     // Draw calculator display
-    draw_display(hdc);
+    draw_display(window);
     
     // Draw buttons
     for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
-        draw_button(hdc, &buttons[i], FALSE);
+        draw_button(window, &buttons[i], 0);
     }
-    
-    EndPaint(window->hwnd, &ps);
 }
 
 void onClick(EUI_Window* window, EUI_Point point) {
     // Check which button was clicked
     for (size_t i = 0; i < sizeof(buttons) / sizeof(buttons[0]); i++) {
         Button* btn = &buttons[i];
-        if (point.x >= btn->x && point.x < btn->x + btn->width &&
-            point.y >= btn->y && point.y < btn->y + btn->height) {
+        if (point.x >= btn->rect.x && 
+            point.x < btn->rect.x + btn->rect.width &&
+            point.y >= btn->rect.y && 
+            point.y < btn->rect.y + btn->rect.height) {
             
             // Visual feedback
-            HDC hdc = GetDC(window->hwnd);
-            draw_button(hdc, btn, TRUE);
-            ReleaseDC(window->hwnd, hdc);
+            draw_button(window, btn, 1);
             Sleep(100);  // Brief delay for button press effect
             
             // Handle the button click
@@ -159,7 +122,7 @@ void onClick(EUI_Window* window, EUI_Point point) {
             }
             
             // Redraw button and update display
-            InvalidateRect(window->hwnd, &btn->rect, TRUE);
+            draw_button(window, btn, 0);
             update_display(window);
             break;
         }
@@ -167,10 +130,7 @@ void onClick(EUI_Window* window, EUI_Point point) {
 }
 
 static void update_display(EUI_Window* window) {
-    // Force redraw of display area
-    RECT displayRect = {10, 10, 290, 50};
-    InvalidateRect(window->hwnd, &displayRect, TRUE);
-    UpdateWindow(window->hwnd);
+    draw_display(window);
 }
 
 static void handle_number(const char* num) {

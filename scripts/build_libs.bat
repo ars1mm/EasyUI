@@ -1,66 +1,60 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Check if Visual Studio is installed and set up environment
+echo Building EasyUI libraries...
+echo.
+
+:: Check for build tools
 where cl >nul 2>nul
-if %ERRORLEVEL% neq 0 (
-    echo Visual Studio not found in PATH
-    echo Please run this script from a Visual Studio Developer Command Prompt
-    exit /b 1
+if %errorlevel% equ 0 (
+    echo Found MSVC compiler
+    call scripts\build_windows_libs.bat
+    if %errorlevel% neq 0 (
+        echo MSVC build failed
+        exit /b %errorlevel%
+    )
+) else (
+    echo MSVC compiler not found, skipping MSVC build
 )
 
-:: Set directories
-set "LIBS_DIR=libs"
-set "STATIC_DIR=%LIBS_DIR%\static"
-set "DYNAMIC_DIR=%LIBS_DIR%\dynamic"
-set "DEBUG_DIR=%LIBS_DIR%\debug"
-
-:: Create directories
-if not exist %STATIC_DIR% mkdir %STATIC_DIR%
-if not exist %DYNAMIC_DIR% mkdir %DYNAMIC_DIR%
-if not exist %DEBUG_DIR% mkdir %DEBUG_DIR%
-
-:: Build Release Static Library
-echo Building Release Static Library (easyui.lib)...
-cl /c /MD /O2 /GL /I"include" src\easyui.c /Fo"%STATIC_DIR%\easyui.obj"
-lib /OUT:"%STATIC_DIR%\easyui.lib" "%STATIC_DIR%\easyui.obj"
-del "%STATIC_DIR%\easyui.obj"
-
-:: Build Release Dynamic Library
-echo Building Release Dynamic Library (easyui.dll)...
-cl /LD /MD /O2 /GL /I"include" src\easyui.c /Fe"%DYNAMIC_DIR%\easyui.dll" /Fo"%DYNAMIC_DIR%\easyui_dll.obj" user32.lib gdi32.lib /link /DLL
-del "%DYNAMIC_DIR%\easyui_dll.obj"
-if exist "%DYNAMIC_DIR%\easyui.lib" move "%DYNAMIC_DIR%\easyui.lib" "%DYNAMIC_DIR%\easyui_dll.lib"
-if exist "%DYNAMIC_DIR%\easyui.exp" del "%DYNAMIC_DIR%\easyui.exp"
-
-:: Build Debug Static Library
-echo Building Debug Static Library (easyuid.lib)...
-cl /c /MDd /Od /Zi /I"include" src\easyui.c /Fo"%DEBUG_DIR%\easyuid.obj"
-lib /OUT:"%DEBUG_DIR%\easyuid.lib" "%DEBUG_DIR%\easyuid.obj"
-del "%DEBUG_DIR%\easyuid.obj"
-
-:: Build Debug Dynamic Library
-echo Building Debug Dynamic Library (easyuid.dll)...
-cl /LD /MDd /Od /Zi /I"include" src\easyui.c /Fe"%DEBUG_DIR%\easyuid.dll" /Fo"%DEBUG_DIR%\easyuid_dll.obj" user32.lib gdi32.lib /link /DLL
-del "%DEBUG_DIR%\easyuid_dll.obj"
-if exist "%DEBUG_DIR%\easyuid.lib" move "%DEBUG_DIR%\easyuid.lib" "%DEBUG_DIR%\easyuid_dll.lib"
-if exist "%DEBUG_DIR%\easyuid.exp" del "%DEBUG_DIR%\easyuid.exp"
-
-:: Copy header to libs directory
-copy "include\easyui.h" "%LIBS_DIR%\"
+where gcc >nul 2>nul
+if %errorlevel% equ 0 (
+    echo.
+    echo Found MinGW compiler
+    call scripts\build_mingw.bat
+    if %errorlevel% neq 0 (
+        echo MinGW build failed
+        exit /b %errorlevel%
+    )
+) else (
+    echo MinGW compiler not found, skipping MinGW build
+)
 
 echo.
-echo Build complete! Libraries created in the %LIBS_DIR% directory:
+echo Build process completed.
 echo.
-echo Static Libraries:
-echo   %STATIC_DIR%\easyui.lib  (Release)
-echo   %DEBUG_DIR%\easyuid.lib  (Debug)
+echo Available libraries:
+
+:: Check and report MSVC build results
+if exist libs\msvc\easyui.lib (
+    echo - MSVC static library: libs\msvc\easyui.lib
+) else (
+    echo - MSVC build not available
+)
+
+:: Check and report MinGW build results
+if exist libs\mingw\libeasyui.a (
+    echo - MinGW static library: libs\mingw\libeasyui.a
+) else (
+    echo - MinGW build not available
+)
+
 echo.
-echo Dynamic Libraries:
-echo   %DYNAMIC_DIR%\easyui.dll     (Release)
-echo   %DYNAMIC_DIR%\easyui_dll.lib (Release import library)
-echo   %DEBUG_DIR%\easyuid.dll      (Debug)
-echo   %DEBUG_DIR%\easyuid_dll.lib  (Debug import library)
-echo.
-echo Header File:
-echo   %LIBS_DIR%\easyui.h
+echo To use these libraries:
+echo 1. Include the header files from the include directory
+echo 2. Link against the appropriate library for your compiler:
+echo    - For Visual Studio: Use easyui.lib
+echo    - For MinGW: Use libeasyui.a
+echo 3. Check the examples directory for usage examples
+
+exit /b 0

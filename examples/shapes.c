@@ -2,29 +2,82 @@
 #include <windows.h>
 #include <math.h>
 
+// Custom styles
+static EUI_LineStyle redLine = {
+    .color = RGB(255, 0, 0),
+    .thickness = 2
+};
+
+static EUI_ShapeStyle blueRect = {
+    .fillColor = RGB(200, 200, 255),
+    .borderColor = RGB(0, 0, 255),
+    .borderWidth = 2
+};
+
+static EUI_ShapeStyle redCircle = {
+    .fillColor = RGB(255, 200, 200),
+    .borderColor = RGB(255, 0, 0),
+    .borderWidth = 2
+};
+
+static EUI_ShapeStyle greenEllipse = {
+    .fillColor = RGB(200, 255, 200),
+    .borderColor = RGB(0, 255, 0),
+    .borderWidth = 2
+};
+
+static EUI_ShapeStyle yellowTriangle = {
+    .fillColor = RGB(255, 255, 200),
+    .borderColor = RGB(128, 128, 0),
+    .borderWidth = 2
+};
+
+static EUI_ShapeStyle purpleHexagon = {
+    .fillColor = RGB(255, 200, 255),
+    .borderColor = RGB(255, 0, 255),
+    .borderWidth = 2
+};
+
+static EUI_LineStyle orangeArc = {
+    .color = RGB(255, 128, 0),
+    .thickness = 2
+};
+
+static EUI_TextStyle titleText = {
+    .fontName = "Arial",
+    .fontSize = 20,
+    .color = RGB(0, 0, 0)
+};
+
+static EUI_TextStyle labelText = {
+    .fontName = "Arial",
+    .fontSize = 12,
+    .color = RGB(0, 0, 0)
+};
+
 void onPaint(EUI_Window* window) {
-    // Draw various shapes to demonstrate the new functions
+    // Draw title
+    EUI_DrawTextEx(window, "EasyUI Shapes Demo", 200, 10, &titleText);
     
     // Line
-    EUI_DrawLine(window, 50, 50, 150, 50, RGB(255, 0, 0), 2);  // Red line
-    EUI_DrawText(window, "Line", 80, 30, "Arial", 12, RGB(0, 0, 0));
+    EUI_DrawLineEx(window, 50, 50, 150, 50, &redLine);
+    EUI_DrawTextEx(window, "Line", 80, 30, &labelText);
     
     // Rectangle
-    EUI_DrawRectangle(window, 50, 100, 100, 60, RGB(200, 200, 255), RGB(0, 0, 255), 2);  // Blue rectangle
-    EUI_DrawText(window, "Rectangle", 65, 130, "Arial", 12, RGB(0, 0, 0));
+    EUI_DrawRectangleEx(window, 50, 100, 100, 60, &blueRect);
+    EUI_DrawTextEx(window, "Rectangle", 65, 130, &labelText);
     
     // Circle
-    EUI_DrawCircle(window, 250, 130, 40, RGB(255, 200, 200), RGB(255, 0, 0), 2);  // Red circle
-    EUI_DrawText(window, "Circle", 230, 130, "Arial", 12, RGB(0, 0, 0));
+    EUI_DrawCircleEx(window, 250, 130, 40, &redCircle);
+    EUI_DrawTextEx(window, "Circle", 230, 130, &labelText);
     
     // Ellipse
-    EUI_DrawEllipse(window, 400, 100, 120, 60, RGB(200, 255, 200), RGB(0, 255, 0), 2);  // Green ellipse
-    EUI_DrawText(window, "Ellipse", 440, 130, "Arial", 12, RGB(0, 0, 0));
+    EUI_DrawEllipseEx(window, 400, 100, 120, 60, &greenEllipse);
+    EUI_DrawTextEx(window, "Ellipse", 440, 130, &labelText);
     
     // Triangle
-    EUI_DrawTriangle(window, 50, 300, 150, 300, 100, 200, 
-                    RGB(255, 255, 200), RGB(128, 128, 0), 2);  // Yellow triangle
-    EUI_DrawText(window, "Triangle", 80, 270, "Arial", 12, RGB(0, 0, 0));
+    EUI_DrawTriangleEx(window, 50, 300, 150, 300, 100, 200, &yellowTriangle);
+    EUI_DrawTextEx(window, "Triangle", 80, 270, &labelText);
     
     // Regular polygon (hexagon)
     POINT hexPoints[6];
@@ -36,20 +89,22 @@ void onPaint(EUI_Window* window) {
         hexPoints[i].x = centerX + (int)(cos(angle) * radius);
         hexPoints[i].y = centerY + (int)(sin(angle) * radius);
     }
-    EUI_DrawPolygon(window, hexPoints, 6, RGB(255, 200, 255), RGB(255, 0, 255), 2);  // Purple hexagon
-    EUI_DrawText(window, "Hexagon", 220, 250, "Arial", 12, RGB(0, 0, 0));
+    EUI_DrawPolygonEx(window, hexPoints, 6, &purpleHexagon);
+    EUI_DrawTextEx(window, "Hexagon", 220, 250, &labelText);
     
     // Arc
-    EUI_DrawArc(window, 400, 200, 100, 100, 0, 270, RGB(255, 128, 0), 2);  // Orange arc
-    EUI_DrawText(window, "Arc", 440, 250, "Arial", 12, RGB(0, 0, 0));
-    
-    // Draw title
-    EUI_DrawText(window, "EasyUI Shapes Demo", 200, 10, "Arial", 20, RGB(0, 0, 0));
+    EUI_DrawArcEx(window, 400, 200, 100, 100, 0, 270, &orangeArc);
+    EUI_DrawTextEx(window, "Arc", 440, 250, &labelText);
 }
 
 void onClick(EUI_Window* window, EUI_Point point) {
     // Add some interactivity - draw a small circle where the user clicks
-    EUI_DrawCircle(window, point.x, point.y, 5, RGB(255, 0, 0), RGB(128, 0, 0), 1);
+    static EUI_ShapeStyle clickDot = {
+        .fillColor = RGB(255, 0, 0),
+        .borderColor = RGB(128, 0, 0),
+        .borderWidth = 1
+    };
+    EUI_DrawCircleEx(window, point.x, point.y, 5, &clickDot);
 }
 
 int main() {

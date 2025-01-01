@@ -2,67 +2,82 @@
 setlocal enabledelayedexpansion
 
 :: Default installation directory
-set "INSTALL_DIR=C:\Program Files\EasyUI"
+set INSTALL_DIR=C:\Program Files\EasyUI
 
-:: Check for administrative privileges
+:: Parse command line arguments
+if not "%1"=="" (
+    set INSTALL_DIR=%1
+)
+
+echo Installing EasyUI to %INSTALL_DIR%...
+echo.
+
+:: Check for administrator privileges
 net session >nul 2>&1
-if %errorLevel% neq 0 (
-    echo This script requires administrative privileges.
-    echo Please run as administrator.
+if %errorlevel% neq 0 (
+    echo Error: This script requires administrator privileges.
+    echo Please run this script as administrator.
     exit /b 1
 )
 
-:: Create installation directories
+:: Build the library first
+call scripts\build_windows_libs.bat
+if %errorlevel% neq 0 (
+    echo Error: Build failed
+    exit /b %errorlevel%
+)
+
+echo.
 echo Creating installation directories...
+
+:: Create installation directories
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
-if not exist "%INSTALL_DIR%\bin" mkdir "%INSTALL_DIR%\bin"
-if not exist "%INSTALL_DIR%\lib" mkdir "%INSTALL_DIR%\lib"
 if not exist "%INSTALL_DIR%\include" mkdir "%INSTALL_DIR%\include"
+if not exist "%INSTALL_DIR%\lib" mkdir "%INSTALL_DIR%\lib"
+if not exist "%INSTALL_DIR%\examples" mkdir "%INSTALL_DIR%\examples"
 
 :: Copy files
 echo Copying files...
-copy "build\bin\easyui.dll" "%INSTALL_DIR%\bin\"
-copy "build\lib\easyui.lib" "%INSTALL_DIR%\lib\"
-copy "include\easyui.h" "%INSTALL_DIR%\include\"
+
+:: Copy header files
+xcopy /Y /Q "include\*.h" "%INSTALL_DIR%\include\"
+xcopy /Y /Q "src\core\*.h" "%INSTALL_DIR%\include\core\"
+xcopy /Y /Q "src\styles\*.h" "%INSTALL_DIR%\include\styles\"
+xcopy /Y /Q "src\window\*.h" "%INSTALL_DIR%\include\window\"
+xcopy /Y /Q "src\graphics\*.h" "%INSTALL_DIR%\include\graphics\"
+
+:: Copy libraries
+xcopy /Y /Q "libs\msvc\*.lib" "%INSTALL_DIR%\lib\"
+
+:: Copy examples
+xcopy /Y /Q "examples\*.*" "%INSTALL_DIR%\examples\"
 
 :: Add to system PATH if not already present
 echo Updating system PATH...
-for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path ^| findstr /i "^Path"') do set "CURRENT_PATH=%%b"
-echo %CURRENT_PATH% | findstr /i /c:"%INSTALL_DIR%\bin" >nul
-if %errorLevel% neq 0 (
-    setx /M PATH "%CURRENT_PATH%;%INSTALL_DIR%\bin"
-    echo Added to system PATH
+for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path ^| findstr /i "^Path"') do set CURRENT_PATH=%%b
+echo %CURRENT_PATH% | findstr /i /c:"%INSTALL_DIR%\lib" >nul
+if %errorlevel% neq 0 (
+    setx /M PATH "%CURRENT_PATH%;%INSTALL_DIR%\lib"
+    if %errorlevel% neq 0 (
+        echo Warning: Failed to update system PATH
+    ) else (
+        echo System PATH updated successfully
+    )
 ) else (
-    echo Already in system PATH
+    echo %INSTALL_DIR%\lib already in system PATH
 )
 
-:: Create pkg-config file
-echo Creating pkg-config file...
-if not exist "%INSTALL_DIR%\lib\pkgconfig" mkdir "%INSTALL_DIR%\lib\pkgconfig"
-(
-    echo prefix=%INSTALL_DIR:\=/%
-    echo exec_prefix=${prefix}
-    echo libdir=${exec_prefix}/lib
-    echo includedir=${prefix}/include
-    echo.
-    echo Name: EasyUI
-    echo Description: A lightweight and easy-to-use GUI library for C
-    echo Version: 0.1.0
-    echo Libs: -L${libdir} -leasyui -lgdi32 -luser32
-    echo Cflags: -I${includedir}
-) > "%INSTALL_DIR%\lib\pkgconfig\easyui.pc"
+echo.
+echo Installation completed successfully!
+echo.
+echo Installation directory: %INSTALL_DIR%
+echo.
+echo To use EasyUI in your projects:
+echo 1. Include the header files from %INSTALL_DIR%\include
+echo 2. Link against the library in %INSTALL_DIR%\lib
+echo 3. Check out the examples in %INSTALL_DIR%\examples
+echo.
+echo Note: You may need to restart your development environment
+echo      for the PATH changes to take effect.
 
-echo.
-echo Installation complete!
-echo.
-echo Files installed to:
-echo   %INSTALL_DIR%\bin\easyui.dll
-echo   %INSTALL_DIR%\lib\easyui.lib
-echo   %INSTALL_DIR%\include\easyui.h
-echo.
-echo Please restart your development environment to ensure the new PATH is recognized.
-echo.
-echo To use in Visual Studio:
-echo 1. Add "%INSTALL_DIR%\include" to your include directories
-echo 2. Add "%INSTALL_DIR%\lib" to your library directories
-echo 3. Add easyui.lib to your linker input
+exit /b 0

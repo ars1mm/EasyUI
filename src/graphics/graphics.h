@@ -1,70 +1,9 @@
-#ifndef EASYUI_H
-#define EASYUI_H
+#ifndef EASYUI_GRAPHICS_H
+#define EASYUI_GRAPHICS_H
 
 #include <windows.h>
-#include <stdint.h>
-
-// Point structure
-typedef struct {
-    int x;
-    int y;
-} EUI_Point;
-
-// Size structure
-typedef struct {
-    int width;
-    int height;
-} EUI_Size;
-
-// Rect structure
-typedef struct {
-    int x;
-    int y;
-    int width;
-    int height;
-} EUI_Rect;
-
-// Style structures
-typedef struct {
-    COLORREF color;
-    int thickness;
-} EUI_LineStyle;
-
-typedef struct {
-    COLORREF fillColor;
-    COLORREF borderColor;
-    int borderWidth;
-} EUI_ShapeStyle;
-
-typedef struct {
-    const char* fontName;
-    int fontSize;
-    COLORREF color;
-} EUI_TextStyle;
-
-// Window structure
-typedef struct EUI_Window {
-    HWND hwnd;
-    EUI_Rect rect;
-    uint32_t style;
-    void (*onPaint)(struct EUI_Window*);
-    void (*onClick)(struct EUI_Window*, EUI_Point);
-} EUI_Window;
-
-// Window styles
-#define EUI_WINDOW_NORMAL     0x00000001
-#define EUI_WINDOW_POPUP      0x00000002
-
-// Default styles
-extern const EUI_LineStyle EUI_DEFAULT_LINE_STYLE;
-extern const EUI_ShapeStyle EUI_DEFAULT_SHAPE_STYLE;
-extern const EUI_TextStyle EUI_DEFAULT_TEXT_STYLE;
-
-// Window functions
-EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height);
-void EUI_ShowWindow(EUI_Window* window);
-void EUI_DestroyWindow(EUI_Window* window);
-void EUI_ProcessMessages(void);
+#include "../window/window.h"
+#include "../styles/styles.h"
 
 // Drawing functions
 void EUI_DrawLine(EUI_Window* window, int x1, int y1, int x2, int y2);
@@ -91,4 +30,4 @@ void EUI_DrawArcEx(EUI_Window* window, int x, int y, int width, int height, int 
 void EUI_DrawText(EUI_Window* window, const char* text, int x, int y);
 void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style);
 
-#endif // EASYUI_H
+#endif // EASYUI_GRAPHICS_H
