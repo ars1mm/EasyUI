@@ -17,23 +17,30 @@ static NSAutoreleasePool* pool = nil;
 static NSApplication* app = nil;
 static EUIWindowDelegate* windowDelegate = nil;
 
-EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height) {
+struct EUI_Window* EUI_CreateWindow(const char* title, int x, int y, int width, int height) {
     return EUI_CreateWindowCocoa(title, x, y, width, height);
 }
 
-void EUI_ShowWindow(EUI_Window* window) {
+void EUI_ShowWindow(struct EUI_Window* window) {
     EUI_ShowWindowCocoa(window);
 }
 
 void EUI_ProcessMessages(void) {
-    EUI_ProcessMessagesCocoa();
+    NSEvent* event;
+    while ((event = [app nextEventMatchingMask:NSEventMaskAny
+                                   untilDate:[NSDate distantPast]
+                                      inMode:NSDefaultRunLoopMode
+                                     dequeue:YES])) {
+        [app sendEvent:event];
+    }
+    [app updateWindows];
 }
 
-void EUI_DestroyWindow(EUI_Window* window) {
+void EUI_DestroyWindow(struct EUI_Window* window) {
     EUI_DestroyWindowCocoa(window);
 }
 
-EUI_Window* EUI_CreateWindowCocoa(const char* title, int x, int y, int width, int height) {
+struct EUI_Window* EUI_CreateWindowCocoa(const char* title, int x, int y, int width, int height) {
     if (!pool) {
         pool = [[NSAutoreleasePool alloc] init];
     }
@@ -59,45 +66,36 @@ EUI_Window* EUI_CreateWindowCocoa(const char* title, int x, int y, int width, in
         defer:NO];
 
     [window setDelegate:windowDelegate];
-    [window setTitle:[NSString stringWithUTF8String:title]];
-    
-    EUI_Window* euiWindow = (EUI_Window*)malloc(sizeof(EUI_Window));
-    if (!euiWindow) {
-        [window release];
-        return NULL;
-    }
-    
-    euiWindow->handle = (void*)window;
+    NSString* nsTitle = [NSString stringWithUTF8String:title];
+    [window setTitle:nsTitle];
+    [window makeKeyAndOrderFront:nil];
+
+    struct EUI_Window* euiWindow = (struct EUI_Window*)malloc(sizeof(struct EUI_Window));
+    if (!euiWindow) return NULL;
+
+    euiWindow->handle = (__bridge_retained void*)window;
     euiWindow->rect.x = x;
     euiWindow->rect.y = y;
     euiWindow->rect.width = width;
     euiWindow->rect.height = height;
-    
+    euiWindow->title = strdup(title);
+
     return euiWindow;
 }
 
-void EUI_ShowWindowCocoa(EUI_Window* window) {
+void EUI_ShowWindowCocoa(struct EUI_Window* window) {
     if (!window || !window->handle) return;
-    NSWindow* win = (NSWindow*)window->handle;
+    NSWindow* win = (__bridge NSWindow*)window->handle;
     [win makeKeyAndOrderFront:nil];
 }
 
-void EUI_ProcessMessagesCocoa(void) {
-    NSEvent* event;
-    while ((event = [app nextEventMatchingMask:NSEventMaskAny
-                                   untilDate:[NSDate distantPast]
-                                      inMode:NSDefaultRunLoopMode
-                                     dequeue:YES])) {
-        [app sendEvent:event];
+void EUI_DestroyWindowCocoa(struct EUI_Window* window) {
+    if (!window) return;
+    if (window->handle) {
+        NSWindow* win = (__bridge_transfer NSWindow*)window->handle;
+        [win close];
     }
-    [app updateWindows];
-}
-
-void EUI_DestroyWindowCocoa(EUI_Window* window) {
-    if (!window || !window->handle) return;
-    NSWindow* win = (NSWindow*)window->handle;
-    [win close];
-    [win release];
+    free((void*)window->title);
     free(window);
 }
 

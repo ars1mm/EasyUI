@@ -4,16 +4,16 @@
 
 #ifdef EASYUI_PLATFORM_MACOS
 
-static NSColor* EUI_ColorToNSColor(unsigned int color) {
+static NSColor* EUI_ColorToNSColor(unsigned long color) {
     float r = ((color >> 16) & 0xFF) / 255.0f;
     float g = ((color >> 8) & 0xFF) / 255.0f;
     float b = (color & 0xFF) / 255.0f;
     return [NSColor colorWithRed:r green:g blue:b alpha:1.0f];
 }
 
-void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height, const EUI_ShapeStyle* style) {
+void EUI_DrawRectangleCocoa(struct EUI_Window* window, int x, int y, int width, int height, const struct EUI_ShapeStyle* style) {
     if (!window || !window->handle) return;
-    NSWindow* win = (NSWindow*)window->handle;
+    NSWindow* win = (__bridge NSWindow*)window->handle;
     NSView* view = [win contentView];
     [view lockFocus];
     
@@ -32,9 +32,9 @@ void EUI_DrawRectangleEx(EUI_Window* window, int x, int y, int width, int height
     [view unlockFocus];
 }
 
-void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EUI_TextStyle* style) {
+void EUI_DrawTextCocoa(struct EUI_Window* window, const char* text, int x, int y, const struct EUI_TextStyle* style) {
     if (!window || !window->handle || !text) return;
-    NSWindow* win = (NSWindow*)window->handle;
+    NSWindow* win = (__bridge NSWindow*)window->handle;
     NSView* view = [win contentView];
     [view lockFocus];
     
@@ -50,13 +50,15 @@ void EUI_DrawTextEx(EUI_Window* window, const char* text, int x, int y, const EU
         NSForegroundColorAttributeName: EUI_ColorToNSColor(style->color)
     };
     
-    [nsText drawAtPoint:NSMakePoint(x, y) withAttributes:attrs];
+    NSPoint point = NSMakePoint(x, y);
+    [nsText drawAtPoint:point withAttributes:attrs];
+    
     [view unlockFocus];
 }
 
-void EUI_DrawPolygonEx(EUI_Window* window, EUI_Point* points, int numPoints, const EUI_ShapeStyle* style) {
+void EUI_DrawPolygonCocoa(struct EUI_Window* window, const EUI_Point* points, int numPoints, const struct EUI_ShapeStyle* style) {
     if (!window || !window->handle || !points || numPoints < 3) return;
-    NSWindow* win = (NSWindow*)window->handle;
+    NSWindow* win = (__bridge NSWindow*)window->handle;
     NSView* view = [win contentView];
     [view lockFocus];
     
@@ -80,4 +82,4 @@ void EUI_DrawPolygonEx(EUI_Window* window, EUI_Point* points, int numPoints, con
     [view unlockFocus];
 }
 
-#endif /* EASYUI_PLATFORM_MACOS */
+#endif // EASYUI_PLATFORM_MACOS

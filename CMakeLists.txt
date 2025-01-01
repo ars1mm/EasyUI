@@ -51,9 +51,6 @@ endif()
 # Core library sources
 set(CORE_SOURCES
     src/easyui.c
-    src/styles/styles.c
-    src/window/window.c
-    src/graphics/graphics.c
 )
 
 # Create the library
